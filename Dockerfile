@@ -12,4 +12,4 @@ EXPOSE 8081
 EXPOSE 8082
 
 # Comando para iniciar EMQX
-CMD ["emqx"]
+CMD ["emqx", "start"]
