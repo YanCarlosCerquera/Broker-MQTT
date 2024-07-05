@@ -10,6 +10,8 @@ volumes:
   
   mariadb:
     driver: local
+  # vol-https-portal-certs:
+  #   driver: local
 
 networks:
   iot:
@@ -61,95 +63,66 @@ services:
     depends_on:
       - mariadb
     restart: always
-
     ports:
       - 18083:18083
       - 18084:18084
       - 1883:1883
       - 8883:8883
-      - 8083:8083
-      - 8084:8084
-      - 8082:8082
-      - 8081:8081
-
+      - 8073:8083
+      - 8074:8084
+      - 8072:8082
+      - 8071:8081
     volumes:
       - vol-emqx-data:/opt/emqx/data
       - vol-emqx-etc:/opt/emqx/etc
       - vol-emqx-log:/opt/emqx/log
- 
-    extra_hosts: 
-      - "localhost:10.192.65.10"
-      - "brokeremqx.ddns.net:174.138.82.97"
-      
-
+    extra_hosts:
+      - "localhost:10.192.65.11"
     environment:
       EMQX_NAME: iothost-org
       EMQX_HOST: 127.0.0.1
-
-      ## Value: String
-      # dashboard.default_user.password = public
       EMQX_DASHBOARD__DEFAULT_USER__PASSWORD: "emqxpass"
-
-      EMQX_ALLOW_ANONYMOUS: "false"
+      EMQX_ALLOW_ANONYMOUS: "true"
       EMQX_NOMATCH: "deny"
-      # Configurar pluguins reglas acl
-      # etc/plugins/emqx_auth_mysql.conf
-      #auth.mysql.server = 127.0.0.1:3306
-      EMQX_AUTH__MYSQL__SERVER: "mariadb_host:3306" 
-      #auth.mysql.username = emqx
-      EMQX_AUTH__MYSQL__USERNAME: ${MARIADB_USER} 
-      #auth.mysql.password = public
-      EMQX_AUTH__MYSQL__PASSWORD: ${MARIADB_PASSWORD} 
-      #auth.mysql.database = mqtt
-      EMQX_AUTH__MYSQL__DATABASE: ${MARIADB_DATABASE} 
 
-      #dashboard.listener.https = 18084
       EMQX_DASHBOARD__LISTENER__HTTPS: 18084
-      #dashboard.listener.https.acceptors = 2
       EMQX_DASHBOARD__LISTENER__HTTPS__ACCEPTORS: 2
-      #dashboard.listener.https.max_clients = 512
       EMQX_DASHBOARD__LISTENER__HTTPS__MAX_CLIENTS: 2
-      #dashboard.listener.https.keyfile = etc/certs/key.pem
-      EMQX_DASHBOARD__LISTENER__HTTPS__KEYFILE: "etc/certs/key.pem"
-      #dashboard.listener.https.certfile = etc/certs/cert.pem
-      EMQX_DASHBOARD__LISTENER__HTTPS__CERTFILE: "etc/certs/cert.pem"
-
-      #dashboard.listener.http.max_clients = 512 - 18083 - 2
+      EMQX_DASHBOARD__LISTENER__HTTPS__KEYFILE: "/etc/letsencrypt/live/localhost/privkey.pem"
+      EMQX_DASHBOARD__LISTENER__HTTPS__CERTFILE: "/etc/letsencrypt/live/localhost/fullchain.pem"
       EMQX_DASHBOARD__LISTENER__HTTP__MAX_CLIENTS: 2
-
-      #management.listener.https = 8081
       EMQX_MANAGEMENT__LISTENER_HTTPS: 8081
-      #management.listener.https.acceptors = 2
       EMQX_MANAGEMENT__LISTENER_HTTPS__ACCEPTORS: 2
-      #management.listener.https.max_clients = 512
       EMQX_MANAGEMENT__LISTENER_HTTPS__MAX_CLIENTS: 2
-      #management.listener.https.backlog = 512
       EMQX_MANAGEMENT__LISTENER_HTTPS__BACKLOG: 2
-      #management.listener.https.send_timeout = 15s
       EMQX_MANAGEMENT__LISTENER_HTTPS__SEND_TIMEOUT: "15s"
-      #management.listener.https.send_timeout_close = on
       EMQX_MANAGEMENT__LISTENER_HTTPS__SEND__TIMEOUT_CLOSE: "on"
-      #management.listener.https.certfile = etc/certs/cert.pem
-      EMQX_MANAGEMENT__LISTENER_HTTPS__CERTFILE: "etc/certs/cert.pem"
-      #management.listener.https.keyfile = etc/certs/key.pem
-      EMQX_MANAGEMENT__LISTENER_HTTPS__KEYFILE: "etc/certs/key.pem"
-
-      #listener.tcp.external.max_connections = 1024000 Puerto 1883
+      EMQX_MANAGEMENT__LISTENER_HTTPS__CERTFILE: "/etc/letsencrypt/live/localhost/fullchain.pem"
+      EMQX_MANAGEMENT__LISTENER_HTTPS__KEYFILE: "/etc/letsencrypt/live/localhost/privkey.pem"
       EMQX_LISTENER__TCP__EXTERNAL__MAX_CONNECTIONS: 1000
-      #listener.ssl.external.max_connections = 102400 Puerto 8883
       EMQX_LISTENER__SSL__EXTERNAL__MAX_CONNECTIONS: 1000
-      #listener.ws.external.max_connections = 102400 Puerto 8083
       EMQX_LISTENER__WS__EXTERNAL__MAX_CONNECTIONS: 1000
-      #listener.wss.external.max_connections = 102400 Puerto 8084
       EMQX_LISTENER__WSS__EXTERNAL__MAX_CONNECTIONS: 1000
-
       EMQX_LOADED_PLUGINS: "emqx_recon,emqx_retainer,emqx_management,emqx_dashboard,emqx_auth_mysql"
-    
     networks:
       iot:
         aliases:
           - emqx_host
 
-    
-
-
+  # https-portal:
+  #   image: steveltn/https-portal:1
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   restart: always
+  #   volumes:
+  #     - vol-https-portal-certs:/var/lib/certbot
+  #     - ./data/https-portal:/var/www/https-portal
+  #   environment:
+  #     DOMAINS: 'localhost -> http://emqx:8084'
+  #     STAGE: 'production'
+  #     DEFAULT_EMAIL: 'your-email@example.com'
+  #   networks:
+  #     iot:
+  #       aliases:
+  #         - https_portal
